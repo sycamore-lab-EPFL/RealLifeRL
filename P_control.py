@@ -1,8 +1,6 @@
 from quanser.hardware import HIL, HILError, Clock
 import numpy as np
 import time
-import torch
-from torch import nn
 control_motor_channels = np.array([0], dtype=np.uint32)  # Analog output channel 0: Motor control voltage
 activate_motor_channels = np.array([0], dtype=np.uint32)  # Digital output channel 0: Motor amplifier enable
 
@@ -14,13 +12,9 @@ encoder_channels = np.array([0,1], dtype=np.uint32)  # Just motor encoder for no
 FREQUENCY = 500  # Hz - control loop frequency
 DURATION = 30    # seconds
 
-network = nn.Sequential(
-    nn.Linear(2, 16),nn.ReLU(),
-    nn.Linear(16, 16),nn.ReLU(),
-    nn.Linear(16, 1),nn.Tanh())
 
 
-def nn_control(card:HIL,network:nn.Module):
+def P_control(card:HIL,network:nn.Module):
     """Use HIL tasks for precise real-time control timing."""
     
     encoder_counts = np.zeros(len(encoder_channels), dtype=np.int32)
@@ -55,18 +49,16 @@ def nn_control(card:HIL,network:nn.Module):
         prev_encoder_counts = np.zeros(len(encoder_channels), dtype=np.int32)
         card.task_read_encoder(read_task, 1, prev_encoder_counts)
         while samples_processed < total_samples:
-            #print("Reading encoder")
             # Read encoder
             card.task_read_encoder(read_task, 1, encoder_counts)
             print(f"Encoder counts: {encoder_counts}")
             v = encoder_counts - prev_encoder_counts
             prev_encoder_counts = encoder_counts.copy()
-            P = (encoder_counts[1]-1024-60)/5.0#+(encoder_counts[0]-409)/200 # Simple proportional control on pendulum angle
-            D = -v[0]/2.0  # Damping term
-            voltage = np.clip(P+D,-2,2)
+            #Change this next line to implement your control law
+            P = 0
+            voltage = np.clip(P,-2,2)
 
             # Write voltage
-            #print("Writing control")
             card.write_analog(control_motor_channels, 1, voltage)
             samples_processed += 1
             
@@ -106,7 +98,7 @@ if __name__ == "__main__":
         print("Amplifier enabled")
         time.sleep(0.5)
         
-        nn_control(card,network)
+        P_control(card,network)
         
     except HILError as e:
         print(f"HIL Error: {e}")
