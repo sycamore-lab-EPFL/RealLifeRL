@@ -14,7 +14,7 @@ DURATION = 30    # seconds
 
 
 
-def P_control(card:HIL,network:nn.Module):
+def P_control(card:HIL):
     """Use HIL tasks for precise real-time control timing."""
     
     encoder_counts = np.zeros(len(encoder_channels), dtype=np.int32)
@@ -64,7 +64,7 @@ def P_control(card:HIL,network:nn.Module):
             
             # Print every second
             if samples_processed % FREQUENCY == 0:
-                print(f"   t={samples_processed/FREQUENCY:.1f}s, Encoder: {encoder_counts[1]:+6d} counts, V={voltage:+.3f}")
+                print(f"   t={samples_processed/FREQUENCY:.1f}s, Encoder: {encoder_counts[1]} counts, V={voltage}")
         
         print("Loop completed successfully")
         
@@ -98,7 +98,7 @@ if __name__ == "__main__":
         print("Amplifier enabled")
         time.sleep(0.5)
         
-        P_control(card,network)
+        P_control(card)
         
     except HILError as e:
         print(f"HIL Error: {e}")
